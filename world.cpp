@@ -4,23 +4,19 @@
 #include "world.h"
 
 
-World::World(){
-    for (int i = 0; i < Params::height; i++){
-        for (int j = 0; j < Params::width; j++){
+World::World() {
+    for (int i = 0; i < Params::height; i++) {
+        for (int j = 0; j < Params::width; j++) {
             World::grid[i][j] = rand() % 2;
         }
     }
 }
 
-World::World(const std::string& filepath, int epoch) {
+World::World(const std::string &filepath, int epoch) {
     // Will read the first state from filepath
     std::ifstream inFile(filepath);
     if (inFile.is_open()) {
-        // this is really dumb
-        int x;
-        for (int i = 0; i < Params::width * Params::height * epoch; i++){
-            inFile >> x;
-        }
+        inFile.seekg(epoch * Params::width * Params::height * 2, std::ios::beg);
         for (int i = 0; i < Params::height; i++) {
             for (int j = 0; j < Params::width; j++) {
                 inFile >> grid[i][j];
@@ -33,14 +29,15 @@ World::World(const std::string& filepath, int epoch) {
 }
 
 
-int World::countNeighbours(int i, int j){
+int World::countNeighbours(int i, int j) {
     int count = 0;
-    for (int neighbour_i = i-1; neighbour_i <= i+1; neighbour_i++) {
-        for (int neighbour_j = j-1; neighbour_j <= j+1; neighbour_j++) {
-            if ((neighbour_i == 0) && (neighbour_j == 0)){
+    for (int neighbour_i = i - 1; neighbour_i <= i + 1; neighbour_i++) {
+        for (int neighbour_j = j - 1; neighbour_j <= j + 1; neighbour_j++) {
+            if ((neighbour_i == 0) && (neighbour_j == 0)) {
                 continue;
             }
-            if ((neighbour_i < 0) || (neighbour_j < 0) || (neighbour_i >= Params::height) || (neighbour_j >= Params::width)){
+            if ((neighbour_i < 0) || (neighbour_j < 0) || (neighbour_i >= Params::height) ||
+                (neighbour_j >= Params::width)) {
                 continue;
             }
             count += grid[neighbour_i][neighbour_j];
@@ -49,32 +46,40 @@ int World::countNeighbours(int i, int j){
     return count;
 }
 
-void World::step(){
-    for (int i = 0; i < Params::height; i++){
-        for (int j = 0; j < Params::width; j++){
-            if (((countNeighbours(i, j) < 2) || (countNeighbours(i, j) > 3)) && (grid[i][j] == 1)){
-                grid[i][j] = 0;
+void World::step() {
+    int new_grid[Params::width][Params::height];
+    for (int i = 0; i < Params::height; i++) {
+        for (int j = 0; j < Params::width; j++) {
+            int neighbours = countNeighbours(i, j);
+            if (((neighbours < 2) || (neighbours > 3)) && (grid[i][j] == 1)) {
+                new_grid[i][j] = 0;
+            } else if ((neighbours == 3) && (grid[i][j] == 0)) {
+                new_grid[i][j] = 1;
+            } else {
+                new_grid[i][j] = grid[i][j];
             }
-            else if ((countNeighbours(i, j) == 3) && (grid[i][j] == 0)){
-                grid[i][j] = 1;
-            }
+        }
+    }
+
+    for (int i = 0; i < Params::height; i++) {
+        for (int j = 0; j < Params::width; j++) {
+            grid[i][j] = new_grid[i][j];
         }
     }
 }
 
-void World::run(int epochs, const std::string& filepath){
-    for (int n = 0; n < epochs; n++){
+void World::run(const std::string &filepath) {
+    for (int n = 0; n < Params::epochs; n++) {
         write(filepath, n);
         step();
     }
 }
 
-void World::write(const std::string& filepath, int epoch) {
+void World::write(const std::string &filepath, int epoch) {
     std::ofstream outFile;
-    if (epoch == 0){
+    if (epoch == 0) {
         outFile = std::ofstream(filepath);
-    }
-    else{
+    } else {
         outFile = std::ofstream(filepath, std::ios_base::app);
     }
     if (outFile.is_open()) {
@@ -84,9 +89,7 @@ void World::write(const std::string& filepath, int epoch) {
             }
         }
         outFile.close();
-    }
-    else
-    {
+    } else {
         std::cout << "Unable to open file for writing." << std::endl;
     }
 }
@@ -97,8 +100,7 @@ void World::print() {
         for (int j = 0; j < Params::width; j++) {
             if (grid[i][j] == 0) {
                 c = ".";
-            }
-            else{
+            } else {
                 c = "#";
             }
             std::cout << c << " ";

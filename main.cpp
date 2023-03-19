@@ -1,15 +1,14 @@
 #include <iostream>
+#include <fstream>
 #include "display.h"
 #include "world.h"
 
 int main() {
     World world = World();
-    world.run(2000, "test.txt");
 
-    World test = World("test.txt", 11);
-    test.print();
-
+    world.run("test.txt");
     display("test.txt");
+    create_gif("test.txt", "test.gif");
 
     return 0;
 }

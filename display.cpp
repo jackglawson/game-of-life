@@ -1,12 +1,39 @@
 #include <SDL2/SDL.h>
+#include <iostream>
+#include "gif.h"
 #include "display.h"
 #include "world.h"
 
-const int PIXEL_SIZE = 7;
-const int SCREEN_WIDTH = PIXEL_SIZE * Params::width;
-const int SCREEN_HEIGHT = PIXEL_SIZE * Params::height;
-const int LINE_THICKNESS = 0;
-const int FRAME_RATE_MS = 100;
+const int SCREEN_WIDTH = Params::display_pixel_size * Params::width;
+const int SCREEN_HEIGHT = Params::display_pixel_size * Params::height;
+
+
+int create_gif(const std::string& in_filepath, const char* out_filepath){
+    World world;
+    uint8_t image[ SCREEN_WIDTH * SCREEN_HEIGHT * 4 ];
+
+    GifWriter writer;
+    GifBegin(&writer, out_filepath, SCREEN_WIDTH, SCREEN_HEIGHT, Params::display_frame_rate_ms);
+
+    for (int epoch = 0; epoch < Params::epochs; epoch++){
+        world = World(in_filepath, epoch);
+        for (int y = 0; y < SCREEN_HEIGHT; ++y) {
+            for (int x = 0; x < SCREEN_WIDTH; ++x) {
+                int i = y / Params::display_pixel_size;
+                int j = x / Params::display_pixel_size;
+                image[(y * SCREEN_WIDTH + x) * 4 + 0] = (1 - world.grid[i][j]) * 255;
+                image[(y * SCREEN_WIDTH + x) * 4 + 1] = (1 - world.grid[i][j]) * 255;
+                image[(y * SCREEN_WIDTH + x) * 4 + 2] = (1 - world.grid[i][j]) * 255;
+            }
+        }
+        GifWriteFrame( &writer, image, SCREEN_WIDTH, SCREEN_HEIGHT, Params::display_frame_rate_ms / 10, 8, true );
+    }
+
+    GifEnd( &writer );
+
+    return 0;
+}
+
 
 int display(const std::string& filepath)
 {
@@ -20,7 +47,7 @@ int display(const std::string& filepath)
     Uint32 last_tick_time = SDL_GetTicks();
     Uint32 current_tick_time;
 
-    while (is_running) {
+    while ((is_running) && (epoch < Params::epochs)) {
         current_tick_time = SDL_GetTicks();
 
         SDL_Event event;
@@ -30,36 +57,27 @@ int display(const std::string& filepath)
             }
         }
 
-        if (current_tick_time - last_tick_time >= FRAME_RATE_MS) {
-            world = World("test.txt", epoch);
+        if (current_tick_time - last_tick_time >= Params::display_frame_rate_ms) {
+            world = World(filepath, epoch);
             last_tick_time = current_tick_time;
-            epoch ++;
-        }
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
 
-        // Draw the grid
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        for (int i = 0; i < SCREEN_HEIGHT; i += PIXEL_SIZE) {
-            SDL_RenderDrawLine(renderer, 0, i, SCREEN_WIDTH, i);
-        }
-        for (int j = 0; j < SCREEN_WIDTH; j += PIXEL_SIZE) {
-            SDL_RenderDrawLine(renderer, j, 0, j, SCREEN_HEIGHT);
-        }
-
-        // Draw the pixels
-        for (int i = 0; i < Params::height; i++) {
-            for (int j = 0; j < Params::width; j++) {
-                if (world.grid[i][j] == 0) {
-                    SDL_Rect pixel_rect = { j * PIXEL_SIZE + LINE_THICKNESS, i * PIXEL_SIZE + LINE_THICKNESS, PIXEL_SIZE - 2 * LINE_THICKNESS, PIXEL_SIZE - 2 * LINE_THICKNESS };
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                    SDL_RenderFillRect(renderer, &pixel_rect);
+            for (int i = 0; i < Params::height; i++) {
+                for (int j = 0; j < Params::width; j++) {
+                    if (world.grid[i][j] == 0) {
+                        SDL_Rect pixel_rect = {j * Params::display_pixel_size, i * Params::display_pixel_size, Params::display_pixel_size, Params::display_pixel_size};
+                        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                        SDL_RenderFillRect(renderer, &pixel_rect);
+                    }
                 }
             }
-        }
 
-        SDL_RenderPresent(renderer);
+            SDL_RenderPresent(renderer);
+
+            epoch++;
+        }
     }
 
     SDL_DestroyRenderer(renderer);

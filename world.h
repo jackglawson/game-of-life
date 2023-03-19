@@ -7,6 +7,9 @@
 namespace Params {
     const int width = 100;
     const int height = 100;
+    const int epochs = 100;
+    const int display_pixel_size = 7;
+    const int display_frame_rate_ms = 20;
 };
 
 
@@ -21,7 +24,7 @@ public:
     int grid[Params::width][Params::height]{};
     World();
     World(const std::string& filepath, int epoch);
-    void run(int epochs, const std::string& filepath);
+    void run(const std::string& filepath);
     void print();
 };
 
