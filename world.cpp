@@ -13,7 +13,6 @@ World::World() {
 }
 
 World::World(const std::string &filepath, int epoch) {
-    // Will read the first state from filepath
     std::ifstream inFile(filepath);
     if (inFile.is_open()) {
         inFile.seekg(epoch * Params::width * Params::height * 2, std::ios::beg);
@@ -33,7 +32,7 @@ int World::countNeighbours(int i, int j) {
     int count = 0;
     for (int neighbour_i = i - 1; neighbour_i <= i + 1; neighbour_i++) {
         for (int neighbour_j = j - 1; neighbour_j <= j + 1; neighbour_j++) {
-            if ((neighbour_i == 0) && (neighbour_j == 0)) {
+            if ((neighbour_i == i) && (neighbour_j == j)) {
                 continue;
             }
             if ((neighbour_i < 0) || (neighbour_j < 0) || (neighbour_i >= Params::height) ||
